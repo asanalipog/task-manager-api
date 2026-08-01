@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Secrets / local REST client (contains real passwords)
+api.http
+*.local.http
+
+# Django
+*.sqlite3
+db.sqlite3
+/staticfiles/
+/media/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
