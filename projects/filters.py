@@ -7,11 +7,15 @@ import django_filters
 
 
 class TaskFilter(django_filters.FilterSet):
-    project = django_filters.ModelChoiceFilter(
-      queryset=lambda request: Project.objects.filter(owner=request.user))
+    project = django_filters.NumberFilter()
     class Meta:
         model = Task
-        fields = ['status', 'project']
+        fields = ['status','assignee', ]
+
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(
+            name__icontains=value
+        )
 
 
     
