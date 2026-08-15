@@ -15,8 +15,6 @@ class Note(models.Model):
 
 class User(AbstractUser):
     email = models.EmailField(null=True, blank=True)
-    username = models.CharField(max_length= 20, unique= True)
-    password = models.CharField(max_length=20)
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = []
     

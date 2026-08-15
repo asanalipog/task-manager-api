@@ -30,14 +30,15 @@ class Task(models.Model):
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank= True)
+
     def clean(self):
         if not Project.objects.filter(pk=self.project_id).exists():
             raise ValidationError({
                 "project": "This project does not exist."
             })
-        
+
     class Meta:
-        ordering = ["project"]
+        ordering = ["id"]
     def __str__(self):
         return self.title
 
@@ -52,7 +53,7 @@ class Membership(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="memberships")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete= models.CASCADE, related_name= "memberships")
     class Meta:
-        ordering = ["project"]
+        ordering = ["id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "project"],
