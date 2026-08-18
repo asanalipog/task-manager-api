@@ -98,7 +98,7 @@ class MalformedInputTests(BaseAPITestCase):
         self.as_(self.member)
         response = self.client.post(
             "/api/tasks/",
-            {"title": "x" * 21, "description": "d", "project": self.project.id},
+            {"title": "x" * 1000, "description": "d", "project": self.project.id},
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -140,7 +140,7 @@ class MalformedInputTests(BaseAPITestCase):
     def test_create_project_description_too_long(self):
         self.as_(self.member)
         response = self.client.post(
-            "/api/projects/", {"name": "ok", "description": "x" * 51}
+            "/api/projects/", {"name": "ok", "description": "x" * 10051}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

@@ -469,3 +469,32 @@ class ModelConstraintTests(BaseAPITestCase):
         self.assertEqual(str(task), "ttl")
         membership = Membership.objects.get(user=self.owner, project=self.project)
         self.assertEqual(str(membership), "OWNER")
+
+
+    def test_status_integrity(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Task.objects.create(title = "status_integ", description = "d", project = self.project, status = "blah")
+
+    def test_role_integrity(self):
+            with self.assertRaises(IntegrityError):
+                with transaction.atomic():
+                    Membership.objects.create(user = self.member, project = self.project, role = "down")
+
+    def test_status_integrity_valid(self):
+        task = Task.objects.create(title = "status_integ", description = "d", project = self.project, status = "DONE")
+        self.assertEqual(str(task), "status_integ")
+
+    def test_due_date_yest(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Task.objects.create(title = "status_integ", description = "d", project = self.project, due_date = (timezone.localdate() - timedelta(days=1)))
+
+    def test_due_date_today(self):
+        task = Task.objects.create(title = "status_integ", description = "d", project = self.project, due_date = timezone.localdate())
+        self.assertEqual(str(task), "status_integ")
+
+    def test_due_date_none(self):
+            task = Task.objects.create(title = "status_integ", description = "d", project = self.project,)
+            self.assertEqual(str(task), "status_integ")
+    

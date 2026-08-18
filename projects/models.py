@@ -2,7 +2,8 @@ from django.db import models
 
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
-
+from django.db.models import CheckConstraint, Q, F
+from django.db.models.functions import TruncDate
 # Create your models here.
 
 class Status(models.TextChoices):
@@ -13,8 +14,8 @@ class Status(models.TextChoices):
     
 
 class Project(models.Model):
-    name = models.CharField(max_length=20)
-    description = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
+    description = models.CharField(max_length=1000)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["id"]
@@ -24,21 +25,26 @@ class Project(models.Model):
 
 class Task(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.TODO)
-    title = models.CharField(max_length=20)
-    description = models.CharField(max_length=50)
+    title = models.CharField(max_length=50)
+    description = models.CharField(max_length=1000)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks", )
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank= True)
 
-    def clean(self):
-        if not Project.objects.filter(pk=self.project_id).exists():
-            raise ValidationError({
-                "project": "This project does not exist."
-            })
 
     class Meta:
         ordering = ["id"]
+        constraints = [
+            models.CheckConstraint(
+                check = Q(due_date__gte = TruncDate('created_at')),
+                name = "date_checker"
+            ),
+            models.CheckConstraint(
+                check = Q(status__in = Status.values),
+                name = "status_checker"
+            )
+        ]
     def __str__(self):
         return self.title
 
@@ -55,6 +61,10 @@ class Membership(models.Model):
     class Meta:
         ordering = ["id"]
         constraints = [
+            models.CheckConstraint(
+                check = Q(role__in=Role.values),
+                name = "role_checker"
+            ),
             models.UniqueConstraint(
                 fields=["user", "project"],
                 name="unique_user_project"
