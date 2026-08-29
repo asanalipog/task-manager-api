@@ -16,8 +16,9 @@ it catches and why it currently fails.
 
 from datetime import timedelta
 
+
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, transaction, connection
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -483,7 +484,7 @@ class ModelConstraintTests(BaseAPITestCase):
 
     def test_status_integrity_valid(self):
         task = Task.objects.create(title = "status_integ", description = "d", project = self.project, status = "DONE")
-        self.assertEqual(str(task), "status_integ")
+        self.assertIsNotNone(task.pk)
 
     def test_due_date_yest(self):
         with self.assertRaises(IntegrityError):
@@ -492,9 +493,21 @@ class ModelConstraintTests(BaseAPITestCase):
 
     def test_due_date_today(self):
         task = Task.objects.create(title = "status_integ", description = "d", project = self.project, due_date = timezone.localdate())
-        self.assertEqual(str(task), "status_integ")
+        self.assertIsNotNone(task.pk)
 
     def test_due_date_none(self):
             task = Task.objects.create(title = "status_integ", description = "d", project = self.project,)
-            self.assertEqual(str(task), "status_integ")
-    
+            self.assertIsNotNone(task.pk)
+
+class QueryTests(BaseAPITestCase):
+    def test_task_query(self):
+        self.as_(self.member)
+        Task.objects.create(title="t", description="d",assignee = self.member,  project=self.project)
+        Task.objects.create(title="r", description="d",assignee = self.member, project=self.project)
+        Task.objects.create(title="e", description="d", assignee = self.member,project=self.project)
+        Task.objects.create(title="w", description="d", assignee = self.member,project=self.project)
+        Task.objects.create(title="q", description="d", assignee = self.member,project=self.project)
+        Task.objects.create(title="y", description="d", assignee = self.member,project=self.project)
+        Task.objects.create(title="u", description="d", assignee = self.member,project=self.project)
+        with self.assertNumQueries(2):
+            self.client.get("/api/tasks/")

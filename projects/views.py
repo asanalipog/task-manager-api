@@ -64,23 +64,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     filterset_class = TaskFilter
     ordering_fields = ["due_date", "created_at"]
     queryset = Task.objects.all().order_by("id")
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     return Task.objects.filter(
-    #         project__memberships__user = user,
-    #         project__memberships__role__in=[
-    #                         "OWNER",
-    #                         "ADMIN",
-    #                         "MEMBER",
-    #                         "VIEWER",
-    #                     ],
-    #         ).select_related("project", "assignee")
 
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         task = self.get_object()
         task.status = "DONE"
-        task.save()
+        task.save(update_fields = ["status"])
         serializer = self.get_serializer(task)
         return Response(serializer.data)
 
@@ -89,9 +78,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Task.objects.filter(
                 project__memberships__user=self.request.user,
                 project__memberships__role__in=["OWNER", "ADMIN", "MEMBER", "VIEWER"],
-            ).distinct()
+            ).select_related("project", "assignee")
 
-        return Task.objects.all().order_by("id")
+        return Task.objects.all().order_by("id").select_related("project", "assignee")
 
 
 class MembershipViewSet(viewsets.ModelViewSet):

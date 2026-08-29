@@ -10,7 +10,7 @@ class TaskFilter(django_filters.FilterSet):
     project = django_filters.NumberFilter()
     class Meta:
         model = Task
-        fields = ['status','assignee', ]
+        fields = ['status','assignee',]
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(

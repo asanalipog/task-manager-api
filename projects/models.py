@@ -34,10 +34,11 @@ class Task(models.Model):
 
 
     class Meta:
+        indexes = [models.Index(fields=["due_date"])]
         ordering = ["id"]
         constraints = [
             models.CheckConstraint(
-                check = Q(due_date__gte = TruncDate('created_at')),
+                check = Q(due_date__isnull=True) | Q(due_date__gte = TruncDate('created_at')),
                 name = "date_checker"
             ),
             models.CheckConstraint(
