@@ -4,7 +4,7 @@ __pycache__/
 venv/
 .env
 
-# Secrets / local REST client (contains real passwords)
+# Secrets / local REST client
 api.http
 *.local.http
 
@@ -14,18 +14,11 @@ db.sqlite3
 /staticfiles/
 /media/
 
+# Local service data
+/redisdata/
+/database/
+
 # IDE / OS
 .DS_Store
 .idea/
 .vscode/
-
-NOTES.md
-/redisdata/
-DAY1_CHEATSHEET.md
-CLAUDE.md
-LEARN.md
-PLAN.md
-RULEBOOK.md
-SCHEDULE.md
-roadmap.pdf
-CHALLENDGE.md
