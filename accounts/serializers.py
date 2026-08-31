@@ -1,11 +1,7 @@
-from .models import Note
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-class NoteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Note
-        fields = ["id", "title", "body"]
 
 User = get_user_model()
 

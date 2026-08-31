@@ -12,11 +12,6 @@ class TaskFilter(django_filters.FilterSet):
         model = Task
         fields = ['status','assignee',]
 
-    def filter_search(self, queryset, name, value):
-        return queryset.filter(
-            name__icontains=value
-        )
-
 
     
 

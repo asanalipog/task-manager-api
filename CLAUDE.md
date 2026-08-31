@@ -32,7 +32,9 @@ backend **on my own**, with the skills expected of someone in that role.
 
 ## How to teach me
 
-- Use **Spring Boot → Django analogies** — I know Spring Boot well (built a task manager in it).
+- **Explain from first principles — no Spring Boot / Java analogies.** I don't know Spring Boot
+  well enough for them to help; they cost me more than they save. Teach the Django concept
+  itself, and what problem it exists to solve.
 - Explain the "why" and the hidden Django magic, not just the "what."
 - Push me toward **real-world backend practices**: REST design, auth/permissions, migrations
   discipline, testing, env-based config, clean git history.
@@ -41,8 +43,8 @@ backend **on my own**, with the skills expected of someone in that role.
 
 ## Project context
 
-- Building a **Task Manager REST API** (Django + DRF), reusing the domain from my Spring Boot
-  project so I focus on Django mechanics. API path (JSON), not server-rendered HTML templates.
+- Building a **Task Manager REST API** (Django + DRF) — a familiar domain, so I focus on
+  Django mechanics. API path (JSON), not server-rendered HTML templates.
 - Stack: Python 3.11, Django 5, DRF, SimpleJWT, PostgreSQL. venv at `./venv`.
 - `python` is aliased to system Python; after activating venv, use `python3 manage.py ...`.
 - Plan and progress live in `PLAN.md`.

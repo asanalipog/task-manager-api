@@ -3,7 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
-
+from .tasks import send_task_created_email, send_assignee_email
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
@@ -34,7 +34,17 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = ["id", "status", "title", "description", "created_at", "project", "due_date", "assignee", "project_name", "assignee_username"]
         read_only_fields = ["created_at", ]
 
+    def create(self, validated_data):
+        user = self.context['request'].user
+        with transaction.atomic():
+            task = Task.objects.create(**validated_data)
+            
+            transaction.on_commit(lambda: send_task_created_email.delay(user.email, user.username))
 
+            if task.assignee:
+                transaction.on_commit(lambda: send_assignee_email.delay(task.id))
+
+        return task
 
     def validate_due_date(self, value):
         if value:
