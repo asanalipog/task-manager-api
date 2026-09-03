@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
 import environ, os
+from celery.schedules import crontab
 
 from pathlib import Path
 
@@ -133,7 +134,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+CELERY_BEAT_SCHEDULe = {
+    'checker_for_deadlines': {
+        'task': 'projects.tasks.check_for_deadline',
+        'schedule': crontab(hour = 8, minute = 0),
+    },
+}
+CELERY_TIMEZONE = "UTC"
 STATIC_URL = "static/"
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -79,7 +79,7 @@ class Command(BaseCommand):
                         assignee=assignee,
                         status=choice(Status.values),
                         due_date=date.today() + timedelta(
-                            days=randint(1, 365)
+                            days=randint(1, 100)
                         ),
                     )
                 )

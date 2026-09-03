@@ -23,7 +23,17 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Membership, Project, Task
+from .models import Membership, Project, Task, Status
+
+from datetime import timedelta
+
+from django.core import mail
+from .tasks import check_for_deadline
+from .tasks import (
+    send_task_created_email,
+    send_assignee_email,
+    send_assignee_deadline,
+)
 
 User = get_user_model()
 
@@ -40,11 +50,11 @@ class BaseAPITestCase(APITestCase):
     """
 
     def setUp(self):
-        self.owner = User.objects.create_user(username="owner", password="pass12345")
-        self.admin = User.objects.create_user(username="admin", password="pass12345")
-        self.member = User.objects.create_user(username="member", password="pass12345")
-        self.viewer = User.objects.create_user(username="viewer", password="pass12345")
-        self.outsider = User.objects.create_user(username="outsider", password="pass12345")
+        self.owner = User.objects.create_user(username="owner", password="pass12345", email ="owner@user.com")
+        self.admin = User.objects.create_user(username="admin", password="pass12345", email ="admin@user.com")
+        self.member = User.objects.create_user(username="member", password="pass12345", email ="member@user.com")
+        self.viewer = User.objects.create_user(username="viewer", password="pass12345", email ="viewer@user.com")
+        self.outsider = User.objects.create_user(username="outsider", password="pass12345", email ="outsider@user.com")
 
         self.project = Project.objects.create(name="Proj A", description="desc a")
 
@@ -55,7 +65,7 @@ class BaseAPITestCase(APITestCase):
 
         # A second, unrelated project to check for data leakage / isolation.
         self.other_project = Project.objects.create(name="Proj B", description="desc b")
-        self.other_owner = User.objects.create_user(username="other_owner", password="pass12345")
+        self.other_owner = User.objects.create_user(username="other_owner", password="pass12345", email ="other_owner@user.com")
         Membership.objects.create(user=self.other_owner, project=self.other_project, role="OWNER")
 
     # -- helpers ---------------------------------------------------------
@@ -511,3 +521,131 @@ class QueryTests(BaseAPITestCase):
         Task.objects.create(title="u", description="d", assignee = self.member,project=self.project)
         with self.assertNumQueries(2):
             self.client.get("/api/tasks/")
+
+
+
+
+
+class EmailTaskTests(BaseAPITestCase):
+
+    def test_send_task_created_email(self):
+        send_task_created_email(
+            self.member.email,
+            self.member.username,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+
+        email = mail.outbox[0]
+
+        self.assertEqual(email.subject, "Task created!")
+        self.assertEqual(
+            email.body,
+            f"You have created new task {self.member.username}",
+        )
+        self.assertEqual(email.to, [self.member.email])
+
+    def test_send_assignee_email(self):
+        task = Task.objects.create(
+            title="Test task",
+            project=self.project,
+            assignee=self.member,
+        )
+
+        send_assignee_email(task.id)
+
+        self.assertEqual(len(mail.outbox), 1)
+
+        email = mail.outbox[0]
+
+        self.assertEqual(
+            email.subject,
+            "You have been assigned a task",
+        )
+        self.assertEqual(
+            email.body,
+            "You have been assigned: Test task",
+        )
+        self.assertEqual(email.to, [self.member.email])
+
+    def test_send_assignee_deadline(self):
+        task = Task.objects.create(
+            title="Deadline task",
+            project=self.project,
+            assignee=self.member,
+            due_date=timezone.localdate() + timedelta(days=1),
+        )
+
+        send_assignee_deadline(task.id)
+
+        self.assertEqual(len(mail.outbox), 1)
+
+        email = mail.outbox[0]
+
+        self.assertEqual(
+            email.subject,
+            "You have deadline tomorrow",
+        )
+        self.assertEqual(
+            email.body,
+            "Your assigned task - Deadline task has deadline by tomorrow.",
+        )
+        self.assertEqual(email.to, [self.member.email])
+
+    def test_send_assignee_deadline_without_assignee(self):
+        task = Task.objects.create(
+            title="Unassigned task",
+            project=self.project,
+            assignee=None,
+            due_date=timezone.localdate() + timedelta(days=1),
+        )
+
+        send_assignee_deadline(task.id)
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_check_for_deadline(self):
+        tomorrow = timezone.localdate() + timedelta(days=1)
+
+        Task.objects.create(
+            title="Should receive email",
+            project=self.project,
+            assignee=self.member,
+            due_date=tomorrow,
+            status=Status.IN_PROGRESS,
+        )
+
+        Task.objects.create(
+            title="Should NOT receive email",
+            project=self.project,
+            assignee=self.member,
+            due_date=tomorrow,
+            status=Status.DONE,
+        )
+
+        Task.objects.create(
+            title="Not tomorrow",
+            project=self.project,
+            assignee=self.member,
+            due_date=tomorrow + timedelta(days=1),
+            status=Status.IN_PROGRESS,
+        )
+
+        check_for_deadline()
+
+        self.assertEqual(len(mail.outbox), 1)
+
+        email = mail.outbox[0]
+
+        self.assertEqual(
+            email.to,
+            [self.member.email],
+        )
+        self.assertEqual(
+            email.subject,
+            "You have deadline tomorrow",
+        )
+        self.assertEqual(
+            email.body,
+            "Your assigned task - Should receive email has deadline by tomorrow.",
+        )
